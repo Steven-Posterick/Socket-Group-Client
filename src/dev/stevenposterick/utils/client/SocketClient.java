@@ -16,7 +16,7 @@ public class SocketClient extends Thread {
     private final ServerListener listener;
     private final ChatUser chatUser;
     private Socket socket;
-    private volatile boolean running;
+    private volatile boolean running = true;
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
 
@@ -39,21 +39,26 @@ public class SocketClient extends Thread {
             listener.onFailedConnection();
             return;
         }
-        listener.onSuccessfulConnection();
+        listener.onSuccessfulConnection(chatUser.getName());
 
         // Tell server that you have connected.
         sendMessageToServer(MessageType.CONNECTED.getMessageStart() + chatUser.toString());
 
         try {
             while (isRunning()) {
-                while (dataIn.available() > 0) {
+                while (dataIn.available() == 0) {
+                    if (!isRunning()){
+                        break;
+                    }
                     Thread.sleep(50);
                 }
                 String line = dataIn.readUTF();
 
+                System.out.println(line);
+
                 for (MessageType messageType : MessageType.values()){
                     if (line.startsWith(messageType.getMessageStart())) {
-                        String messageLine = line.replaceFirst(messageType.getMessageStart(), "");
+                        String messageLine = line.replace(messageType.getMessageStart(), "");
                         messageType.getHandler().sendMessage(listener, messageLine);
                         break;
                     }

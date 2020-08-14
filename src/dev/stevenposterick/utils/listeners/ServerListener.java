@@ -15,5 +15,6 @@ public interface ServerListener {
 
     void onFailedConnection();
 
-    void onSuccessfulConnection();
+    void onSuccessfulConnection(String name);
+
 }

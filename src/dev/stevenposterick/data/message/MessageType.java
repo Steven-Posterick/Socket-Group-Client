@@ -4,12 +4,13 @@ import dev.stevenposterick.data.account.ChatUser;
 
 public enum MessageType {
     DISCONNECTED("$(DISCONNECTED)", (listener, line) -> {
-        Message message = Message.createFromString(line);
+        ChatUser chatUser = ChatUser.createFromString(line);
 
-        if (message != null)
-            listener.onChatMessage(message);
+        if (chatUser != null)
+            listener.onPlayerLeft(chatUser);
         else
-            System.out.println("Failed to parse message.");
+            System.out.println("Failed to parse chat user");
+
     }),
     CONNECTED("$(CONNECTED)", ((listener, line) -> {
         ChatUser chatUser = ChatUser.createFromString(line);
@@ -21,12 +22,12 @@ public enum MessageType {
 
     })),
     MESSAGE("$(MESSAGE)", ((listener, line) -> {
-        ChatUser chatUser = ChatUser.createFromString(line);
+        Message message = Message.createFromString(line);
 
-        if (chatUser != null)
-            listener.onPlayerLeft(chatUser);
+        if (message != null)
+            listener.onChatMessage(message);
         else
-            System.out.println("Failed to parse chat user");
+            System.out.println("Failed to parse message.");
     }));
 
     private final String message;

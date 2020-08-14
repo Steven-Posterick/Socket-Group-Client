@@ -58,13 +58,15 @@ public class Controller implements Initializable, ServerListener {
             protected void updateItem(Message item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty || item == null){
-                    setText(null);
-                } else {
-                    setText(
-                            item.getFrom() + " " + item.getTime() +
-                            System.lineSeparator() + item.getMessage());
-                }
+                Platform.runLater(()-> {
+                    if (empty || item == null){
+                        setText(null);
+                    } else {
+                        setText(
+                                item.getFrom() + " " + item.getTime() +
+                                        System.lineSeparator() + item.getMessage());
+                    }
+                });
             }
         });
 
@@ -74,11 +76,13 @@ public class Controller implements Initializable, ServerListener {
             protected void updateItem(ChatUser item, boolean empty) {
                 super.updateItem(item, empty);
 
-                if (empty || item == null){
-                    setText(null);
-                } else {
-                    setText("[" + item.getName() + "]");
-                }
+                Platform.runLater(()-> {
+                    if (empty || item == null){
+                        setText(null);
+                    } else {
+                        setText(item.getName());
+                    }
+                });
             }
         });
     }
@@ -242,8 +246,9 @@ public class Controller implements Initializable, ServerListener {
     }
 
     @Override
-    public void onSuccessfulConnection() {
+    public void onSuccessfulConnection(String name) {
         sendClientMessage("Successfully connected to server.");
         setClientState(ClientState.CONNECTED);
+        userListView.getItems().add(new ChatUser(name));
     }
 }

@@ -26,6 +26,7 @@ public class ChatUser {
         String[] data = new String[1];
 
         if (!matcher.find()) {
+            System.out.println(string);
             return null;
         }
 
