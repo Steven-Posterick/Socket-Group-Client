@@ -96,10 +96,7 @@ public class Controller implements Initializable, ServerListener {
                 socketClient.setRunning(false);
             }
 
-            Platform.runLater(() -> {
-                sendClientMessage("Disconnected from server.");
-                userListView.getItems().clear();
-            });
+            Platform.runLater(() -> userListView.getItems().clear());
 
             setClientState(ClientState.NOT_CONNECTED);
         } else {
