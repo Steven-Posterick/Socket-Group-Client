@@ -4,6 +4,7 @@ import dev.stevenposterick.data.account.ChatUser;
 import dev.stevenposterick.data.message.MessageType;
 import dev.stevenposterick.utils.listeners.ServerListener;
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -45,35 +46,57 @@ public class SocketClient extends Thread {
         sendMessageToServer(MessageType.CONNECTED.getMessageStart() + chatUser.toString());
 
         try {
+            runLoop: 
             while (isRunning()) {
                 while (dataIn.available() == 0) {
                     if (!isRunning()){
-                        break;
+                        break runLoop;
                     }
                     Thread.sleep(50);
                 }
+                if (!isRunning()){
+                    break;
+                }
                 String line = dataIn.readUTF();
 
-                System.out.println(line);
+                // Ignore connection tests.
+                if (!line.equals("Test")) {
+                    System.out.println(line);
 
-                for (MessageType messageType : MessageType.values()){
-                    if (line.startsWith(messageType.getMessageStart())) {
-                        String messageLine = line.replace(messageType.getMessageStart(), "");
-                        messageType.getHandler().sendMessage(listener, messageLine);
-                        break;
+                    for (MessageType messageType : MessageType.values()) {
+                        if (line.startsWith(messageType.getMessageStart())) {
+                            String messageLine = line.replace(messageType.getMessageStart(), "");
+                            messageType.getHandler().sendMessage(listener, messageLine);
+                            break;
+                        }
                     }
                 }
 
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            // Tell server you have disconnected.
+            sendMessageToServer(MessageType.DISCONNECTED.getMessageStart() + chatUser.toString());
+
+            // When finished send disconnected alert.
+            listener.onDisconnected();
+
+            // Close all the closeable objects.
+            close(socket);
+            close(dataIn);
+            close(dataOut);
         }
+    }
 
-        // Tell server you have disconnected.
-        sendMessageToServer(MessageType.DISCONNECTED.getMessageStart() + chatUser.toString());
-
-        // When finished send disconnected alert.
-        listener.onDisconnected();
+    private void close(Closeable closeable){
+        if (closeable != null){
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private synchronized boolean isRunning() {

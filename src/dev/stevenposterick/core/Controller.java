@@ -91,11 +91,23 @@ public class Controller implements Initializable, ServerListener {
     public void onDisconnect(ActionEvent actionEvent) {
         actionEvent.consume();
 
-        if (socketClient != null){
-            socketClient.setRunning(false);
-        }
+        if (getClientState() != ClientState.NOT_CONNECTED) {
+            if (socketClient != null) {
+                socketClient.setRunning(false);
+            }
 
-        setClientState(ClientState.NOT_CONNECTED);
+            Platform.runLater(() -> {
+                sendClientMessage("Disconnected from server.");
+                userListView.getItems().clear();
+            });
+
+            setClientState(ClientState.NOT_CONNECTED);
+        } else {
+            Platform.runLater(()-> {
+                showAlert(Alert.AlertType.ERROR, "Already Disconnected",
+                        "You are already disconnected from the server.");
+            });
+        }
     }
 
     // Method is called when connect button is clicked.
@@ -177,8 +189,9 @@ public class Controller implements Initializable, ServerListener {
     }
 
     private void sendClientMessage(String message){
-        chatListView.getItems().add(
-                new Message("Client", message));
+        Platform.runLater(()->
+                chatListView.getItems().add(
+                        new Message("Client", message)));
     }
 
     private synchronized ClientState getClientState(){
@@ -202,7 +215,7 @@ public class Controller implements Initializable, ServerListener {
             return;
 
         // Add the character.
-        userListView.getItems().add(user);
+        Platform.runLater(()-> userListView.getItems().add(user));
     }
 
     @Override
@@ -211,11 +224,12 @@ public class Controller implements Initializable, ServerListener {
             return;
 
         // Remove the character.
-        userListView.getItems().stream()
-                .filter(u-> u.getName().equals(user.getName()))
-                .findFirst()
-                .ifPresent(chatUser -> userListView.getItems().remove(chatUser));
-
+        Platform.runLater(()->
+                userListView.getItems().stream()
+                        .filter(u-> u.getName().equals(user.getName()))
+                        .findFirst()
+                        .ifPresent(chatUser -> userListView.getItems().remove(chatUser))
+        );
     }
 
     @Override
@@ -223,32 +237,31 @@ public class Controller implements Initializable, ServerListener {
         if (message == null)
             return;
 
-        chatListView.getItems().add(message);
+        Platform.runLater(()-> chatListView.getItems().add(message));
     }
 
     @Override
     public void onDisconnected() {
-        Platform.runLater(()-> {
-            setClientState(ClientState.NOT_CONNECTED);
-            sendClientMessage("Disconnected from server.");
-        });
+        if (socketClient != null){
+            socketClient.setRunning(false);
+        }
+        setClientState(ClientState.NOT_CONNECTED);
+        sendClientMessage("Disconnected from server.");
+
     }
 
     @Override
     public void onFailedConnection() {
-        Platform.runLater(()-> {
-            setClientState(ClientState.NOT_CONNECTED);
-            sendClientMessage("Failed to connect to server.");
-
-            showAlert(Alert.AlertType.ERROR, "Failed to connect",
-                    "Failed to connect to the server with the address and port provided.");
-        });
+        setClientState(ClientState.NOT_CONNECTED);
+        sendClientMessage("Failed to connect to server.");
+        Platform.runLater(()-> showAlert(Alert.AlertType.ERROR, "Failed to connect",
+                "Failed to connect to the server with the address and port provided."));
     }
 
     @Override
     public void onSuccessfulConnection(String name) {
         sendClientMessage("Successfully connected to server.");
         setClientState(ClientState.CONNECTED);
-        userListView.getItems().add(new ChatUser(name));
+        Platform.runLater(()-> userListView.getItems().add(new ChatUser(name)));
     }
 }
